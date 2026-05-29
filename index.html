@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitas a Tiendas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f4;color:#1c1c1a;min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1.5rem 1rem}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #e5e5e3}
+header h1{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+header h1 span{font-size:20px}
+.nav{display:flex;gap:6px}
+.nav-btn{font-size:13px;padding:6px 14px;border-radius:100px;border:1px solid #d4d4d2;background:none;cursor:pointer;color:#5f5f5a;transition:all .12s}
+.nav-btn.active{background:#1c1c1a;color:#fff;border-color:#1c1c1a}
+.page{display:none}.page.active{display:block}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.metric{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px}
+.metric-label{font-size:11px;color:#888780;text-transform:uppercase;letter-spacing:.04em}
+.metric-val{font-size:26px;font-weight:600;color:#1c1c1a;margin-top:4px}
+.controls{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.controls input,.controls select{font-size:13px;padding:8px 12px;border:1px solid #d4d4d2;border-radius:8px;background:#fff;color:#1c1c1a;outline:none}
+.controls input{flex:1;min-width:180px}
+.controls input:focus,.controls select:focus{border-color:#1c1c1a}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1.5rem}
+.store-card{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1rem 1.25rem;cursor:pointer;transition:all .12s}
+.store-card:hover{border-color:#888780;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.store-card.active{border:2px solid #1c1c1a}
+.store-name{font-size:14px;font-weight:600;color:#1c1c1a;margin-bottom:6px}
+.store-meta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.tag{font-size:11px;padding:3px 8px;border-radius:100px;font-weight:500}
+.tag-dark{background:#1c1c1a;color:#fff}
+.tag-light{background:#f1efe8;color:#5f5f5a}
+.tag-green{background:#d4f4e2;color:#1a6b3a}
+.store-hint{font-size:12px;color:#aaa}
+.detail-wrap{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.detail-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.detail-title{font-size:15px;font-weight:600}
+.close-btn{background:none;border:none;cursor:pointer;font-size:22px;color:#888;line-height:1}
+.sec-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem}
+.sec-tab{font-size:12px;padding:5px 12px;border-radius:100px;border:1px solid #e5e5e3;background:none;cursor:pointer;color:#888780;transition:all .1s}
+.sec-tab.active{background:#1c1c1a;color:#fff;border-color:#1c1c1a}
+.qa-list{display:flex;flex-direction:column;gap:10px}
+.qa-item{border-left:2px solid #e5e5e3;padding-left:12px}
+.qa-item.hit{border-left-color:#1c1c1a;border-left-width:3px}
+.qa-q{font-size:12px;color:#888780;margin-bottom:2px}
+.qa-a{font-size:13px;color:#1c1c1a;line-height:1.5}
+.form-wrap{max-width:580px}
+.step-bar{display:flex;gap:4px;margin-bottom:1.5rem}
+.step{flex:1;height:3px;background:#e5e5e3;border-radius:2px;transition:background .2s}
+.step.done{background:#1c1c1a}
+.form-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.form-sub{font-size:13px;color:#888780;margin-bottom:1.5rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.form-row{margin-bottom:10px}
+.form-label{font-size:12px;color:#5f5f5a;margin-bottom:4px;display:block;font-weight:500}
+.form-row textarea,.form-row input[type=text],.form-row input[type=date],.form-row select{width:100%;font-size:13px;padding:8px 10px;border:1px solid #d4d4d2;border-radius:8px;background:#fff;color:#1c1c1a;outline:none;font-family:inherit}
+.form-row textarea{resize:vertical;min-height:54px}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{border-color:#1c1c1a}
+.form-actions{display:flex;gap:8px;padding-top:1rem;border-top:1px solid #e5e5e3;margin-top:1rem}
+.btn-primary{background:#1c1c1a;color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;font-family:inherit}
+.btn-primary:hover{background:#3a3a38}
+.btn-secondary{background:#fff;color:#1c1c1a;border:1px solid #d4d4d2;padding:9px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn-secondary:hover{background:#f5f5f4}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1c1c1a;color:#fff;font-size:13px;padding:10px 20px;border-radius:100px;display:none;z-index:999;white-space:nowrap}
+.toast.show{display:block}
+.empty{text-align:center;padding:3rem;color:#888780;font-size:14px}
+.counter{font-size:12px;color:#888780;margin-bottom:1rem}
+.setup-box{background:#fff;border:1px solid #e5e5e3;border-radius:12px;padding:1.5rem;max-width:500px;margin:2rem auto}
+.setup-box h2{font-size:16px;font-weight:600;margin-bottom:8px}
+.setup-box p{font-size:13px;color:#5f5f5a;margin-bottom:1rem;line-height:1.6}
+.setup-box ol{font-size:13px;color:#5f5f5a;padding-left:1.2rem;margin-bottom:1.5rem;line-height:2}
+.setup-box ol a{color:#1c1c1a;font-weight:500}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#e5e5e3;display:inline-block;margin-right:6px}
+.status-dot.ok{background:#22c55e}
+.status-dot.err{background:#ef4444}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><span>🏪</span> Visitas a Tiendas</h1>
+    <div class="nav">
+      <button class="nav-btn active" onclick="showPage('repo')" id="nb-repo">Repositorio</button>
+      <button class="nav-btn" onclick="showPage('nueva')" id="nb-nueva">+ Nueva visita</button>
+      <button class="nav-btn" onclick="showPage('config')" id="nb-config">⚙ Config</button>
+    </div>
+  </header>
+
+  <div id="page-repo" class="page active">
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Buscar en todas las respuestas…" oninput="renderRepo()">
+      <select id="fSec" onchange="renderRepo()">
+        <option value="">Todas las secciones</option>
+        <option value="perfil">Perfil del cliente</option>
+        <option value="producto">Producto y surtido</option>
+        <option value="equipo">Equipo de piso</option>
+        <option value="visual">Visual merchandising</option>
+        <option value="competencia">Mercado y competencia</option>
+        <option value="operacion">Operación y datos</option>
+      </select>
+      <select id="fTienda" onchange="renderRepo()"><option value="">Todas las tiendas</option></select>
+    </div>
+    <div class="counter" id="counter"></div>
+    <div class="store-grid" id="storeGrid"></div>
+    <div id="detailWrap" style="display:none">
+      <div class="detail-wrap">
+        <div class="detail-header">
+          <span class="detail-title" id="detailTitle"></span>
+          <button class="close-btn" onclick="closeDetail()">×</button>
+        </div>
+        <div class="sec-tabs" id="secTabs"></div>
+        <div class="qa-list" id="qaList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-nueva" class="page">
+    <div class="step-bar" id="stepBar"></div>
+    <div class="form-wrap" id="formWrap"></div>
+  </div>
+
+  <div id="page-config" class="page">
+    <div class="setup-box">
+      <h2>Configuración de base de datos</h2>
+      <p>Para que todo el equipo comparta el mismo repositorio, la app usa <strong>JSONBin.io</strong> como base de datos en la nube. Es gratuito y no requiere instalar nada.</p>
+      <ol>
+        <li>Entra a <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> y crea una cuenta gratis</li>
+        <li>Ve a <strong>API Keys</strong> y copia tu Master Key</li>
+        <li>Pégala aquí abajo y haz clic en "Conectar"</li>
+      </ol>
+      <div class="form-row">
+        <label class="form-label">API Key de JSONBin</label>
+        <input type="text" id="apiKeyInput" placeholder="$2b$10$..." style="font-family:monospace">
+      </div>
+      <div style="margin-top:8px;margin-bottom:1rem;font-size:13px;color:#5f5f5a">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Sin configurar</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" onclick="connectDB()">Conectar y sincronizar</button>
+        <button class="btn-secondary" onclick="clearConfig()">Limpiar configuración</button>
+      </div>
+      <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e5e3">
+        <p style="font-size:12px;color:#aaa">Una vez configurado, todos los miembros del equipo que abran esta URL y usen la misma API Key verán los mismos datos en tiempo real.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SECCIONES={
+  perfil:["Rango de edad predominante","Nivel socioeconómico percibido","¿Viene solo, en pareja, familia o con asesor?","¿Quién toma la decisión de compra final?","¿El cliente busca asesoría activa o prefiere navegar solo?","Tiempo promedio en tienda","¿Regresa o trae a alguien más antes de decidir?","Ocasión más frecuente (boda, graduación, oficina, religioso)","Anticipación de compra antes del evento","¿Viene con fecha límite o está explorando?","¿La compra es para el cliente o para regalar?","¿Cómo se viste la gente en el centro comercial?","¿El cliente toca la tela antes de preguntar el precio?","¿Cuántas prendas prueba antes de decidir?","¿Consulta el teléfono dentro de la tienda?","¿Habla de marcas de la competencia?"],
+  producto:["Categoría que rota más","Tallas que se agotan primero","Tallas o cortes que siempre sobran","Colores que se piden y cuáles no se mueven","Complementos más vendidos","¿El cliente pregunta el precio antes o después de probarse?","¿El precio se percibe justo o caro?","¿Las promociones modifican el ticket o aceleran la decisión?","¿Qué no tenemos que sí buscan?","¿Se van sin comprar? ¿Por qué?","¿Piden productos de temporada que no están en piso?","¿Hay demanda de tallas especiales?","¿El cliente busca outfit completo o solo la prenda principal?"],
+  equipo:["¿Qué te piden más?","¿Qué no tenemos que sí buscan?","¿Cuál es el precio más vendido?","¿Qué objeción es más común al momento de cierre?","¿Qué pregunta del cliente no sabes responder actualmente?","¿Qué herramienta o material de apoyo te haría vender más?","¿Hay clientes que regresan? ¿Por qué vuelven?","¿Cuál es el argumento que más cierra ventas?","¿Qué producto recomendarías poner en escaparate esta semana?","¿Cuántos vendedores hay por turno? ¿Es suficiente?","¿Hay momentos del día/semana donde se satura la atención?","¿Existe protocolo de bienvenida y cierre?","¿Cómo manejan al cliente que 'solo está viendo'?","¿Se registra el motivo de salida sin compra?"],
+  visual:["¿El escaparate refleja la temporada actual?","¿Hay jerarquía clara entre producto estrella y complementos?","¿El cliente entra atraído por el escaparate o ya venía buscando?","¿Las señales de precio y promoción son visibles desde el pasillo?","¿El planograma guía hacia las categorías de mayor margen?","¿La iluminación favorece el color real de las prendas?","¿El probador está limpio e iluminado?","¿Hay espejos en piso fuera del probador?","¿Se muestra outfitting completo en maniquíes?","¿El mostrador de caja genera venta adicional?"],
+  competencia:["Principales competidores","Rango de precios de la competencia directa","¿Qué hace mejor la competencia en visual merchandising?","¿Qué servicios ofrece la competencia que nosotros no?","¿Dónde estamos posicionados: precio, calidad o marca?","¿Hay marcas online que mencionen los clientes?","Temporada más fuerte del año","¿Qué promociones funcionan mejor?","¿Qué medios usan actualmente?","¿Hay eventos del entorno que generen picos?","¿Cuáles son los días de mayor tráfico?","¿Hay diferencia de perfil entre semana vs. fin de semana?"],
+  operacion:["¿Con qué frecuencia llega mercancía nueva?","¿Hay productos que se agotan antes del siguiente pedido?","¿El almacén está organizado para reposición rápida?","¿Se documentan las ventas perdidas por falta de stock?","¿El sistema POS captura datos del cliente?","¿Se usa algún CRM o lista de clientes frecuentes?"]
+};
+const SEC_LABELS={perfil:"Perfil del cliente",producto:"Producto y surtido",equipo:"Equipo de piso",visual:"Visual merchandising",competencia:"Mercado y competencia",operacion:"Operación y datos"};
+const STEPS=["meta","perfil","producto","equipo","visual","competencia","operacion"];
+const SEED=[
+  {id:"madero",nombre:"Madero",fecha:"2026-05-21",equipo:"Areli, Jesús y Abraham",secciones:{perfil:["25-30 años","Variado, presencia de youtubers (medio)","Pareja o grupo","El líder del grupo; en familias los papás","Busca asesoría","Una o dos horas (desde la remodelación)","Sí, regresa el mismo día con más personas","Bodas y graduaciones","Uno o dos meses antes del evento","Sí, suelen venir con fecha definida","Para el cliente, rara vez para regalar","Casual, nada formal","Sí, incluso llegan buscando una tela específica","Dos cambios de outfit en promedio","Aparentemente no","Sí, preguntan o comparan con Aldo Conti"],producto:["Trajes elemental","38-40 en fit regular","Talla 46 hacia arriba","Negro y blanco se piden; verde no se mueve","Cinturón y corbata","Antes de probarse","Justo, los paquetes aligheran el golpe","Aceleran la decisión","Moños negros y pisacorbatas","Sí; el corte no es cómodo en tallas grandes","Pocas veces","Tallas extralargas","Completo, sobre todo por los paquetes"],equipo:["Productos fuera de temporada: suéteres, camisas en colores específicos","Trajes con cola de pingüino y pajaritas (jóvenes 25-35 años)","Paquete 3 × $2,000","No le convence o quiere ver más opciones (clientes de primera vez)","Promociones online no válidas en tienda; reclamos de pedidos online","Equipo propio: laptop o tablet","Sí, por la atención y la calidad del producto","'Se lo merece' o 'le conviene'","Outfit formal casual","3-4 por turno, pero suelen hacer falta","Fines de semana desde el viernes; faltan probadores","Se da uno básico; cada quien adapta el suyo","Seguimiento normal: preguntas, tour y recomendación de prendas","No, se dejó de hacer hace años"],visual:["Sí, trajes para graduación","Sí, los trajes son el producto que más reluce","A veces; otros entran directo por ser clientes habituales","No; solo una promoción visible en toda la sucursal","Sí","Sí","Solo en piso superior","Sí","Sí","Sí, aunque dejarán de tener zona de caja fija"],competencia:["Aldo Conti","$1,499 su paquete más barato","Muchos visuales de promoción y vendedores vestidos de traje","Se consideran completos","Precio, calidad y atención al cliente","No","Fin de año: desde Buen Fin hasta diciembre","Paquetes","Mail, WhatsApp, email y redes sociales","Conciertos y activaciones culturales en el centro","Fin de semana a partir del viernes","Entre semana saben a qué vienen; fines de semana más curiosos"],operacion:["Cada semana, aunque siempre hace falta","Sí, a veces dura solo la mitad de la semana","Sí, todo bien ubicado","No se documentan","Sí","Sí, por cartera de vendedores"]}},
+  {id:"tepeyac",nombre:"Parque Tepeyac",fecha:"2026-05-27",equipo:"—",secciones:{perfil:["18-35 o 40 años; también niños según temporada","Muy variado: bajo, medio y alto","Mucho más en familia","La mujer o la mamá","Preguntan por asesoría","Hasta 15-20 minutos","En ocasiones sí, después de la asesoría","Graduaciones en temporada; bodas fuera de ella","Hasta 2 días antes o en la misma semana","Sí, normalmente ya traen la fecha","Para sí mismos","Muy casual","Sí, se fija mucho","Alrededor de 4, más con asistencia","Sí, o checan otras tiendas y regresan","Sí: Aldo Conti y Vittori"],producto:["Sport y traje elemental","38, 40 y 44","34 y 40","Verde, vino y rosa no se mueven","Corbata, moño (no se tienen), cinturón","Antes, o no preguntan","Varía mucho la percepción","A veces el cliente no entiende la promo hasta llegar a caja","Jeans (anteriormente sí los tenían)","Sí, checan y comparan","No","Extragrande y tallas de niños","Prenda principal; con promos buscan outfit completo"],equipo:["Variedad de trajes","Jeans","$3,600 traje elemental","En algunos casos el precio","No","Mayor distribución de publicidad en la plaza y en redes","Sí, por la atención al cliente","Precio y relación costo-calidad","Día del padre: algo más sport, camisas o playeras","2 por turno, no son suficientes","Fines de semana y de 3 pm al cierre","Sí: saludo, presentación, preguntas, tour; al cierre agradecen y piden encuesta","Preguntan qué desean ver y los asesoran","No"],visual:["Sí","—","En algunas ocasiones sí","Sí","—","—","—","—","—","—"],competencia:["Aldo Conti y Vittorio","—","—","—","—","Aldo en tercer piso cerca del cine","Octubre a enero","48 horas de recompra ($1,799 a $1,999)","Redes sociales","No","Sábado y domingo","Sí hay diferencia de perfil"],operacion:["Cada semana como mínimo, a raíz de insistir","Sí, muy seguido","—","—","—","—"]}},
+  {id:"oceanias",nombre:"Encuentro Oceanías",fecha:"2026-05-27",equipo:"—",secciones:{perfil:["Entre 20 y 30 años","Media y baja","Casi siempre en familia","El que paga","La mayoría busca asesoría","Entre 30 min y 1 hora","Varía; normalmente ya viene en compañía","Eventos; trajes principalmente; ya casi no para trabajo","En la misma semana o 2 días antes","Sí, normalmente ya traen la fecha","Para sí mismos","Muy casual","Sí, siempre se fija mucho","Normalmente 3","Aproximadamente 30%","Sí, 50%: Aldo Conti, Zara y Tomi"],producto:["Pantalones","Entre 32 y 36","ECH y talla 28","Azules","Cinturones, corbatas y calcetines","Normalmente antes","Elevado o caro","Han acelerado algunas decisiones","Pantalones negros, chalecos de vestir","Precio principalmente o escasez de producto","Sí, como trajes fuera de temporada","Talla 50 para arriba (solo por sumisura)","Solo prendas; el equipo busca vender completo"],equipo:["Pantalones y camisas","—","3 × $1,999","Precio","¿Por qué es tan elevado el precio?","Colocar producto en el aparador","Sí, porque no encuentran lo mismo en otras sucursales","Velocidad de sastrería","Trajes en general (smoking solo se ha vendido 1 este mes)","2 + subgerente; falta cajero","Fines de semana","Sí: saludo, investigación, invitación a regresar y encuesta de satisfacción","Observan dónde se detiene y mencionan algo de la prenda","No"],visual:["Sí","—","En algunas ocasiones sí","Sí","—","—","—","—","—","—"],competencia:["Aldo Conti, Tomy y Zara","—","Gritan más las promociones","Precio más económico","Calidad actualmente igual a Aldo Conti","—","Junio y diciembre","Camisa y corbata de regalo; 3×2","Redes sociales","Día del niño, Día del padre y eventos","Sábado y domingo","Casi no hay diferencia de perfil"],operacion:["Cada semana, 2 veces por semana","Varía cada semana","—","—","—","—"]}}
+];
+
+let DB=[];
+let activeId=null;
+let activeSec="perfil";
+let formStep=0;
+let draft={};
+let apiKey="";
+let binId="";
+let syncing=false;
+
+function getStorage(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function setStorage(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+async function loadDB(){
+  apiKey=getStorage("jb_api_key")||"";
+  binId=getStorage("jb_bin_id")||"";
+  if(apiKey&&binId){
+    try{
+      const r=await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`,{headers:{"X-Master-Key":apiKey}});
+      if(r.ok){const d=await r.json();DB=d.record.tiendas||[...SEED];updateStatus(true);return;}
+    }catch(e){}
+    updateStatus(false);
+  }
+  const local=getStorage("tiendas_local");
+  DB=local?JSON.parse(local):[...SEED];
+}
+
+async function saveDB(){
+  setStorage("tiendas_local",JSON.stringify(DB));
+  if(!apiKey||!binId||syncing) return;
+  syncing=true;
+  try{
+    await fetch(`https://api.jsonbin.io/v3/b/${binId}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":apiKey},body:JSON.stringify({tiendas:DB})});
+  }catch(e){}
+  syncing=false;
+}
+
+async function connectDB(){
+  const key=document.getElementById("apiKeyInput").value.trim();
+  if(!key){showToast("Pega tu API Key primero");return;}
+  apiKey=key;
+  setStorage("jb_api_key",key);
+  showToast("Conectando…");
+  if(!binId){
+    try{
+      const r=await fetch("https://api.jsonbin.io/v3/b",{method:"POST",headers:{"Content-Type":"application/json","X-Master-Key":key,"X-Bin-Name":"visitas-tiendas","X-Bin-Private":"false"},body:JSON.stringify({tiendas:DB})});
+      if(r.ok){const d=await r.json();binId=d.metadata.id;setStorage("jb_bin_id",binId);updateStatus(true);showToast("¡Conectado! Comparte el Bin ID con tu equipo: "+binId);return;}
+    }catch(e){}
+    updateStatus(false);showToast("Error al conectar. Revisa la API Key");return;
+  }
+  await saveDB();
+  updateStatus(true);
+  showToast("Sincronizado correctamente");
+}
+
+function clearConfig(){
+  apiKey="";binId="";
+  setStorage("jb_api_key","");setStorage("jb_bin_id","");
+  document.getElementById("apiKeyInput").value="";
+  updateStatus(null);
+  showToast("Configuración limpiada");
+}
+
+function updateStatus(ok){
+  const dot=document.getElementById("statusDot");
+  const txt=document.getElementById("statusText");
+  if(ok===null){dot.className="status-dot";txt.textContent="Sin configurar";}
+  else if(ok){dot.className="status-dot ok";txt.textContent="Conectado a JSONBin (compartido con el equipo)";}
+  else{dot.className="status-dot err";txt.textContent="Sin conexión — guardando solo en este dispositivo";}
+}
+
+function showPage(p){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));
+  document.getElementById("page-"+p).classList.add("active");
+  document.getElementById("nb-"+p).classList.add("active");
+  if(p==="nueva"){draft={};formStep=0;renderForm();}
+  if(p==="repo"){renderRepo();}
+  if(p==="config"){document.getElementById("apiKeyInput").value=apiKey;updateStatus(apiKey&&binId?true:null);}
+}
+
+function renderRepo(){
+  const q=document.getElementById("search").value.toLowerCase().trim();
+  const fSec=document.getElementById("fSec").value;
+  const fTienda=document.getElementById("fTienda").value;
+  const sel=document.getElementById("fTienda");
+  const existing=Array.from(sel.options).map(o=>o.value);
+  DB.forEach(t=>{if(!existing.includes(t.id)){const o=document.createElement("option");o.value=t.id;o.textContent=t.nombre;sel.appendChild(o);}});
+  const shown=DB.filter(t=>{
+    if(fTienda&&t.id!==fTienda)return false;
+    if(!q&&!fSec)return true;
+    for(const [sec,answers] of Object.entries(t.secciones)){
+      if(fSec&&sec!==fSec)continue;
+      const qs=SECCIONES[sec]||[];
+      for(let i=0;i<answers.length;i++){if((qs[i]||"").toLowerCase().includes(q)||(answers[i]||"").toLowerCase().includes(q))return true;}
+    }
+    return false;
+  });
+  document.getElementById("counter").textContent=shown.length===DB.length?`${DB.length} tiendas registradas`:`${shown.length} de ${DB.length} tiendas`;
+  const sg=document.getElementById("summaryGrid");
+  sg.innerHTML=`
+    <div class="metric"><div class="metric-label">Tiendas</div><div class="metric-val">${DB.length}</div></div>
+    <div class="metric"><div class="metric-label">Objetivo</div><div class="metric-val">110</div></div>
+    <div class="metric"><div class="metric-label">Avance</div><div class="metric-val">${Math.round(DB.length/110*100)}%</div></div>
+    <div class="metric"><div class="metric-label">Última visita</div><div class="metric-val" style="font-size:15px">${DB.length?DB[DB.length-1].nombre:"—"}</div></div>`;
+  const grid=document.getElementById("storeGrid");
+  grid.innerHTML="";
+  if(!shown.length){grid.innerHTML=`<div class="empty">Sin resultados para "<strong>${q}</strong>"</div>`;closeDetail();return;}
+  shown.forEach(t=>{
+    const total=Object.values(t.secciones).reduce((s,a)=>s+a.filter(x=>x&&x!=="—").length,0);
+    const card=document.createElement("div");
+    card.className="store-card"+(activeId===t.id?" active":"");
+    card.onclick=()=>openDetail(t.id);
+    card.innerHTML=`<div class="store-name">📍 ${t.nombre}</div>
+      <div class="store-meta">
+        <span class="tag tag-light">📅 ${t.fecha}</span>
+        <span class="tag tag-dark">${total} respuestas</span>
+        ${t.equipo&&t.equipo!=="—"?`<span class="tag tag-green">👥 ${t.equipo}</span>`:""}
+      </div>
+      <div class="store-hint">Toca para ver el detalle</div>`;
+    grid.appendChild(card);
+  });
+  if(activeId){const s=shown.find(t=>t.id===activeId);if(s)renderDetail(s,activeSec);else closeDetail();}
+}
+
+function openDetail(id){
+  const t=DB.find(x=>x.id===id);if(!t)return;
+  activeId=id;
+  document.getElementById("detailWrap").style.display="block";
+  renderDetail(t,activeSec);
+}
+function closeDetail(){
+  activeId=null;
+  document.getElementById("detailWrap").style.display="none";
+  document.querySelectorAll(".store-card").forEach(c=>c.classList.remove("active"));
+}
+function renderDetail(t,sec){
+  activeSec=sec;
+  document.getElementById("detailTitle").textContent=`${t.nombre} · ${t.fecha}`;
+  document.getElementById("secTabs").innerHTML=Object.entries(SEC_LABELS).map(([k,v])=>
+    `<button class="sec-tab${k===sec?" active":""}" onclick="renderDetail(DB.find(x=>x.id==='${t.id}'),'${k}')">${v}</button>`
+  ).join("");
+  const q=document.getElementById("search").value.toLowerCase().trim();
+  const qs=SECCIONES[sec]||[];
+  const answers=t.secciones[sec]||[];
+  document.getElementById("qaList").innerHTML=qs.map((question,i)=>{
+    const ans=answers[i]||"—";
+    const hit=q&&((question+ans).toLowerCase().includes(q));
+    return `<div class="qa-item${hit?" hit":""}"><div class="qa-q">${question}</div><div class="qa-a">${ans}</div></div>`;
+  }).join("");
+  document.querySelectorAll(".store-card").forEach(c=>c.classList.remove("active"));
+  document.querySelectorAll(".store-card").forEach(c=>{if(c.querySelector(".store-name")?.textContent.includes(t.nombre))c.classList.add("active");});
+}
+
+function renderForm(){
+  document.getElementById("stepBar").innerHTML=STEPS.map((_,i)=>`<div class="step${i<=formStep?" done":""}"></div>`).join("");
+  const wrap=document.getElementById("formWrap");
+  wrap.innerHTML="";
+  if(formStep===0){
+    wrap.innerHTML=`<div class="form-title">Datos de la visita</div>
+      <div class="form-sub">Paso 1 de 7 — información general</div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">Nombre de la tienda *</label><input type="text" id="f-nombre" placeholder="Ej. Perisur" value="${draft.nombre||""}"></div>
+        <div class="form-row"><label class="form-label">Fecha de visita</label><input type="date" id="f-fecha" value="${draft.fecha||new Date().toISOString().slice(0,10)}"></div>
+      </div>
+      <div class="form-row"><label class="form-label">Equipo (nombres)</label><input type="text" id="f-equipo" placeholder="Ej. Ana, Rodrigo" value="${draft.equipo||""}"></div>
+      <div class="form-actions"><button class="btn-primary" onclick="nextStep()">Siguiente →</button></div>`;
+    return;
+  }
+  if(formStep>=1&&formStep<=6){
+    const secKey=STEPS[formStep];
+    const questions=SECCIONES[secKey];
+    const saved=draft[secKey]||{};
+    wrap.innerHTML=`<div class="form-title">${SEC_LABELS[secKey]}</div>
+      <div class="form-sub">Paso ${formStep+1} de 7 · ${questions.length} preguntas</div>
+      ${questions.map((q,i)=>`<div class="form-row"><label class="form-label">${q}</label><textarea id="fq-${i}" placeholder="Respuesta…">${saved[i]||""}</textarea></div>`).join("")}
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="prevStep()">← Atrás</button>
+        <button class="btn-primary" onclick="nextStep()">${formStep<6?"Siguiente →":"✓ Guardar visita"}</button>
+      </div>`;
+  }
+}
+
+function collectMeta(){draft.nombre=document.getElementById("f-nombre")?.value.trim()||"";draft.fecha=document.getElementById("f-fecha")?.value||"";draft.equipo=document.getElementById("f-equipo")?.value.trim()||"";}
+function collectSection(){const sk=STEPS[formStep];const qs=SECCIONES[sk];draft[sk]={};qs.forEach((_,i)=>{draft[sk][i]=document.getElementById("fq-"+i)?.value.trim()||"";});}
+
+async function nextStep(){
+  if(formStep===0){collectMeta();if(!draft.nombre){showToast("Escribe el nombre de la tienda");return;}}
+  else{collectSection();}
+  if(formStep<6){formStep++;renderForm();return;}
+  const secs={};
+  Object.keys(SECCIONES).forEach(sec=>{const d=draft[sec]||{};secs[sec]=SECCIONES[sec].map((_,i)=>d[i]||"—");});
+  DB.push({id:"t_"+Date.now(),nombre:draft.nombre,fecha:draft.fecha,equipo:draft.equipo,secciones:secs});
+  await saveDB();
+  showToast("✓ Visita guardada");
+  draft={};formStep=0;renderForm();
+  setTimeout(()=>showPage("repo"),1000);
+}
+function prevStep(){if(formStep===0)return;collectSection();formStep--;renderForm();}
+
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);
+}
+
+loadDB().then(()=>renderRepo());
+</script>
+</body>
+</html>
