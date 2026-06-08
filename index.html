@@ -293,13 +293,18 @@ function requirePin(action){
   document.getElementById("pinModal").classList.add("open");
   setTimeout(()=>document.getElementById("pinInput").focus(),100);
 }
-function closePinModal(){document.getElementById("pinModal").classList.remove("open");pendingPinAction=null;}
+function closePinModal(){
+  document.getElementById("pinModal").classList.remove("open");
+  pendingPinAction=null;
+}
 function checkPin(){
   const val=document.getElementById("pinInput").value.trim();
   if(val===PIN){
-    closePinModal();
-    if(pendingPinAction==="edit") openEditModal();
-    else if(pendingPinAction==="delete") confirmDelete();
+    const action=pendingPinAction;
+    document.getElementById("pinModal").classList.remove("open");
+    pendingPinAction=null;
+    if(action==="edit") openEditModal();
+    else if(action==="delete") confirmDelete();
   } else {
     document.getElementById("pinError").style.display="block";
     document.getElementById("pinInput").value="";
@@ -395,35 +400,56 @@ Deja "" si no hay info. No inventes.`;
   }
 
   try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    const resp=await fetch("/api/extract",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,system:systemPrompt,messages})
     });
     const data=await resp.json();
-    console.log("Claude response status:",resp.status);
-    if(resp.ok){
-      const raw=data.content.map(c=>c.text||"").join("");
-      console.log("Claude raw response (first 300):",raw.slice(0,300));
-      const jm=raw.match(/\{[\s\S]*\}/);
-      if(jm){
-        uploadedData=JSON.parse(jm[0]);
-        const filled=Object.values(uploadedData.secciones||{}).flat().filter(v=>v&&v.trim()).length;
-        console.log("Respuestas extraídas:",filled);
-        setProgress(100,"¡Listo!");
-        setTimeout(()=>{hideProgress();showUploadResult(file.name,false);},500);
-        return;
-      }
-    } else {
-      console.error("Claude API error:",data);
+    console.log("Respuesta /api/extract status:",resp.status);
+    console.log("Respuesta /api/extract:",data);
+
+    if(!resp.ok){
+      throw new Error(data.error || data.message || "Error en /api/extract");
     }
-  }catch(err){console.error("Fetch error:",err);}
+
+    const raw=(data.content||[]).map(c=>c.text||"").join("");
+    console.log("Claude raw response (first 300):",raw.slice(0,300));
+    const jm=raw.match(/\{[\s\S]*\}/);
+
+    if(!jm){
+      throw new Error("Claude no devolvió JSON válido");
+    }
+
+    uploadedData=JSON.parse(jm[0]);
+    if(!uploadedData.secciones) uploadedData.secciones={};
+
+    Object.keys(SECCIONES).forEach(k=>{
+      const arr=uploadedData.secciones[k]||[];
+      uploadedData.secciones[k]=SECCIONES[k].map((_,i)=>arr[i]||"");
+    });
+
+    uploadedData.nombre=uploadedData.nombre||file.name.replace(/\.[^.]+$/,"");
+    uploadedData.fecha=uploadedData.fecha||new Date().toISOString().slice(0,10);
+    uploadedData.equipo=uploadedData.equipo||"";
+
+    const filled=Object.values(uploadedData.secciones||{}).flat().filter(v=>v&&v.trim()).length;
+    console.log("Respuestas extraídas:",filled);
+
+    setProgress(100,"¡Listo!");
+    setTimeout(()=>{hideProgress();showUploadResult(file.name,false);},500);
+    return;
+
+  }catch(err){
+    console.error("Error al procesar archivo:",err);
+  }
 
   uploadedData={nombre:file.name.replace(/\.[^.]+$/,""),fecha:new Date().toISOString().slice(0,10),equipo:"",secciones:{}};
   Object.keys(SECCIONES).forEach(k=>{uploadedData.secciones[k]=SECCIONES[k].map(()=>"");});
   setProgress(100,"Error al procesar");
   setTimeout(()=>{hideProgress();showUploadResult(file.name,true);},500);
 }
+
 
 function showUploadResult(filename,fallback){
   document.getElementById("upload-nombre").value=uploadedData.nombre||filename.replace(/\.[^.]+$/,"");
