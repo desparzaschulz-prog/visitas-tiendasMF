@@ -255,11 +255,17 @@ function toArr(sec, val){
   return SECCIONES[sec].map((_,i)=>val[String(i)]||val[i]||"");
 }
 function normalizeTienda(t){
+  // Sanitize string fields that might be objects
+  const str=v=>typeof v==="string"?v:typeof v==="object"&&v?Object.values(v).join(" "):String(v||"");
+  t.nombre=str(t.nombre);
+  t.fecha=str(t.fecha);
+  t.equipo=str(t.equipo);
+  t.notas=str(t.notas||"");
+  t.id=str(t.id||"t_"+Date.now());
   if(!t.secciones) t.secciones={};
   Object.keys(SECCIONES).forEach(sec=>{
     t.secciones[sec]=toArr(sec, t.secciones[sec]);
   });
-  if(!t.notas) t.notas="";
   return t;
 }
 async function loadDB(){
